@@ -1,0 +1,1425 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Calculator, MapPin, Phone, Mail, Star, Users, Shield, Clock, Award, 
+  ChevronRight, ArrowRight, Building, Home, Wrench, Zap, 
+  CheckCircle, Menu, X, Sun, Moon, Send, Sparkles, Gift, 
+  Ruler, FileText, Image, MessageCircle, Truck, 
+  Calendar, Camera, Layers, Search, Palette, 
+  FilePlus, Eye, RotateCcw, Download, MessageSquare,
+  ChevronDown, ChevronUp, Minus, Plus, Check
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Html, useGLTF } from '@react-three/drei';
+
+// Данные на основе ваших ответов
+const COMPANY_NAME = "СтройБригада Шумерля";
+const YEARS_OF_EXPERIENCE = 20;
+const KEY_BENEFITS = [
+  "Самые быстрые сроки",
+  "Гарантия 10 лет",
+  "Индивидуальный подход"
+];
+const MIN_ORDER_AMOUNT = 5000;
+
+// Цены на заборы
+const FENCE_PRICES = {
+  "деревянный": 1700,
+  "металлический": 1000,
+  "профнастил": 700,
+  "кирпичный": 2800,
+  "сетка-рабица": 750,
+  "комбинированный": 3200
+};
+
+// Цены на навесы
+const CANOPY_PRICES = {
+  "до 10 м²": 15000,
+  "10-20 м²": 50000,
+  "свыше 20 м²": 150000
+};
+
+// Услуги
+const SERVICES = [
+  {
+    id: 1,
+    name: "Заборы",
+    icon: <Wrench className="w-8 h-8" />,
+    description: "Профессиональная установка заборов из различных материалов",
+    features: [
+      "Деревянные",
+      "Металлические",
+      "Кирпичные",
+      "Профнастил",
+      "Сетка-рабица",
+      "Комбинированные"
+    ],
+    color: "from-blue-500 to-cyan-400"
+  },
+  {
+    id: 2,
+    name: "Навесы",
+    icon: <Home className="w-8 h-8" />,
+    description: "Прочные навесы для дачи и дома",
+    features: [
+      "Для автомобилей",
+      "Для террас",
+      "Для беседок",
+      "Металлические",
+      "Деревянные",
+      "Стеклянные"
+    ],
+    color: "from-green-500 to-teal-400"
+  },
+  {
+    id: 3,
+    name: "Дополнительные услуги",
+    icon: <Shield className="w-8 h-8" />,
+    description: "Дополнительные услуги для вашего комфорта",
+    features: [
+      "Установка ворот",
+      "Ремонт заборов",
+      "Ландшафтный дизайн",
+      "Бесплатный замер"
+    ],
+    color: "from-purple-500 to-pink-400"
+  }
+];
+
+// Галерея
+const GALLERY_IMAGES = [
+  'https://placehold.co/600x400/2563eb/ffffff?text=Деревянный+забор',
+  'https://placehold.co/600x400/7c3aed/ffffff?text=Металлический+забор',
+  'https://placehold.co/600x400/059669/ffffff?text=Кирпичный+забор',
+  'https://placehold.co/600x400/dc2626/ffffff?text=Профнастил+забор',
+  'https://placehold.co/600x400/ea580c/ffffff?text=Навес+для+автомобиля',
+  'https://placehold.co/600x400/0891b2/ffffff?text=Навес+для+беседки'
+];
+
+// Отзывы (созданы на основе вашего запроса)
+const TESTIMONIALS = [
+  {
+    name: 'Александр Петров',
+    text: 'Заказывал забор из профнастила. Ребята приехали в тот же день, установили за 2 дня. Качество на высоте! Гарантию дали 10 лет. Рекомендую!',
+    rating: 5,
+    avatar: 'https://placehold.co/60x60/3b82f6/ffffff?text=АП',
+    verified: true
+  },
+  {
+    name: 'Мария Иванова',
+    text: 'Сделали навес для автомобиля за 3 дня. Очень доволен сроками и качеством. Отдельное спасибо за бесплатный замер. Теперь всем рекомендую!',
+    rating: 5,
+    avatar: 'https://placehold.co/60x60/ef4444/ffffff?text=МИ',
+    verified: true
+  },
+  {
+    name: 'Дмитрий Сидоров',
+    text: 'Ремонтировали старый деревянный забор. Работа выполнена качественно и быстро. Цены адекватные. Теперь знаю, к кому обращаться!',
+    rating: 5,
+    avatar: 'https://placehold.co/60x60/10b981/ffffff?text=ДС',
+    verified: false
+  },
+  {
+    name: 'Елена Кузнецова',
+    text: 'Заказывали комбинированный забор с кирпичными столбами. Получилось очень стильно и надежно. Гарантия 10 лет дает уверенность. Спасибо за индивидуальный подход!',
+    rating: 5,
+    avatar: 'https://placehold.co/60x60/8b5cf6/ffffff?text=ЕК',
+    verified: true
+  }
+];
+
+// Дополнительные функции (придумано 7)
+const ADDITIONAL_FEATURES = [
+  {
+    icon: <Calendar className="w-6 h-6" />,
+    title: "Календарь замеров",
+    description: "Выберите удобное время для бесплатного замера"
+  },
+  {
+    icon: <Layers className="w-6 h-6" />,
+    title: "Сравнение материалов",
+    description: "Сравните все типы материалов и выберите оптимальный вариант"
+  },
+  {
+    icon: <RotateCcw className="w-6 h-6" />,
+    title: "3D-превью",
+    description: "Посмотрите, как будет выглядеть ваш забор в реальных условиях"
+  },
+  {
+    icon: <Truck className="w-6 h-6" />,
+    title: "Отслеживание заказа",
+    description: "Следите за статусом вашего заказа в реальном времени"
+  },
+  {
+    icon: <Search className="w-6 h-6" />,
+    title: "Подбор материала",
+    description: "Ответьте на несколько вопросов и получите рекомендацию"
+  },
+  {
+    icon: <MessageCircle className="w-6 h-6" />,
+    title: "Чат с менеджером",
+    description: "Задайте вопросы в режиме реального времени"
+  },
+  {
+    icon: <Download className="w-6 h-6" />,
+    title: "Скачать проект",
+    description: "Получите 3D-модель вашего будущего забора"
+  }
+];
+
+const App = () => {
+  const [activeTab, setActiveTab] = useState('home');
+  const [showMenu, setShowMenu] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    service: '',
+    message: '',
+    fenceType: '',
+    fenceLength: '',
+    canopySize: '',
+    appointmentDate: '',
+    appointmentTime: ''
+  });
+  const [formErrors, setFormErrors] = useState({});
+  const [isFormSubmitted, setIsFormSubmitted] = useState(false);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(true);
+  const [isAppointmentOpen, setIsAppointmentOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedFenceType, setSelectedFenceType] = useState('');
+  const [selectedCanopyType, setSelectedCanopyType] = useState('');
+  const [chatMessages, setChatMessages] = useState([
+    { sender: 'bot', text: 'Здравствуйте! Я ваш виртуальный помощник. Чем могу помочь?' }
+  ]);
+  const [newMessage, setNewMessage] = useState('');
+  const [isChatTyping, setIsChatTyping] = useState(false);
+  const [threeDView, setThreeDView] = useState('fence');
+  const [fenceConfig, setFenceConfig] = useState({
+    type: 'деревянный',
+    height: 2,
+    length: 10,
+    gates: false,
+    color: '#8B4513'
+  });
+
+  // Авто-прокрутка галереи
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % GALLERY_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Имитация набора текста в чате
+  useEffect(() => {
+    if (isChatTyping) {
+      const timer = setTimeout(() => {
+        setChatMessages(prev => [
+          ...prev,
+          { sender: 'bot', text: 'Спасибо за ваше сообщение! Наш менеджер свяжется с вами в ближайшее время.' }
+        ]);
+        setIsChatTyping(false);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isChatTyping]);
+
+  // Валидация формы
+  const validateForm = () => {
+    let errors = {};
+    if (!formData.name) errors.name = 'Поле "Имя" обязательно';
+    if (!formData.phone) errors.phone = 'Поле "Телефон" обязательно';
+    if (!formData.service && !formData.fenceType && !formData.canopySize) errors.service = 'Выберите услугу';
+    return errors;
+  };
+
+  // Обработчик изменения формы
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  // Отправка формы
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errors = validateForm();
+    setFormErrors(errors);
+    
+    if (Object.keys(errors).length === 0) {
+      try {
+        // Интеграция с Telegram
+        const telegramBotToken = '7652376591:AAGbGzcwwpIyN91fLtX2KAW0KM_qQ07RUXs';
+        const chatId = '5977892192';
+        
+        const message = `
+🧩 Новая заявка с сайта!
+👤 Имя: ${formData.name}
+📞 Телефон: ${formData.phone}
+🛠 Услуга: ${formData.service || formData.fenceType || formData.canopySize}
+📝 Сообщение: ${formData.message}
+📍 Тип забора: ${formData.fenceType}
+📏 Длина забора: ${formData.fenceLength} м
+📐 Размер навеса: ${formData.canopySize}
+📅 Дата замера: ${formData.appointmentDate}
+⏰ Время замера: ${formData.appointmentTime}
+📍 Город: Шумерля
+        `;
+        
+        await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: message
+          })
+        });
+        
+        setIsFormSubmitted(true);
+        setTimeout(() => {
+          setIsFormSubmitted(false);
+          setFormData({
+            name: '',
+            phone: '',
+            service: '',
+            message: '',
+            fenceType: '',
+            fenceLength: '',
+            canopySize: '',
+            appointmentDate: '',
+            appointmentTime: ''
+          });
+        }, 3000);
+      } catch (error) {
+        console.error('Error sending to Telegram:', error);
+        alert('Ошибка при отправке заявки. Пожалуйста, попробуйте позже.');
+      }
+    }
+  };
+
+  // Отправка сообщения в чат
+  const handleSendMessage = () => {
+    if (newMessage.trim() === '') return;
+    
+    setChatMessages(prev => [
+      ...prev,
+      { sender: 'user', text: newMessage }
+    ]);
+    
+    setNewMessage('');
+    setIsChatTyping(true);
+  };
+
+  // Рассчет цены
+  const calculatePrice = () => {
+    let totalPrice = 0;
+    
+    // Цена забора
+    if (formData.fenceType && formData.fenceLength) {
+      const pricePerMeter = FENCE_PRICES[formData.fenceType.toLowerCase()] || 0;
+      totalPrice += pricePerMeter * parseFloat(formData.fenceLength);
+    }
+    
+    // Цена навеса
+    if (formData.canopySize) {
+      const canopySize = formData.canopySize.toLowerCase();
+      if (CANOPY_PRICES[canopySize]) {
+        totalPrice += CANOPY_PRICES[canopySize];
+      }
+    }
+    
+    return totalPrice;
+  };
+
+  // 3D модель забора
+  const FenceModel = () => (
+    <group>
+      {/* Основание забора */}
+      <mesh position={[0, 0, 0]}>
+        <boxGeometry args={[fenceConfig.length, 0.1, 0.3]} />
+        <meshStandardMaterial color="#8B4513" />
+      </mesh>
+      
+      {/* Столбы */}
+      {Array.from({ length: Math.floor(fenceConfig.length / 2) + 1 }).map((_, i) => (
+        <mesh key={i} position={[i * 2 - fenceConfig.length / 2 + 1, fenceConfig.height / 2, 0]}>
+          <boxGeometry args={[0.2, fenceConfig.height, 0.3]} />
+          <meshStandardMaterial color={fenceConfig.color} />
+        </mesh>
+      ))}
+      
+      {/* Панели */}
+      {Array.from({ length: Math.floor(fenceConfig.length) }).map((_, i) => (
+        <mesh key={i} position={[i - fenceConfig.length / 2 + 0.5, fenceConfig.height / 2 - 0.1, 0]}>
+          <boxGeometry args={[1, fenceConfig.height - 0.2, 0.05]} />
+          <meshStandardMaterial color={fenceConfig.color} />
+        </mesh>
+      ))}
+      
+      {/* Ворота (если выбраны) */}
+      {fenceConfig.gates && (
+        <group position={[fenceConfig.length / 2 - 1, fenceConfig.height / 2, 0]}>
+          <mesh>
+            <boxGeometry args={[1.5, fenceConfig.height - 0.2, 0.1]} />
+            <meshStandardMaterial color="#A9A9A9" />
+          </mesh>
+        </group>
+      )}
+    </group>
+  );
+
+  // 3D модель навеса
+  const CanopyModel = () => (
+    <group>
+      {/* Опоры */}
+      <mesh position={[-2, 1.5, 0]}>
+        <boxGeometry args={[0.3, 3, 0.3]} />
+        <meshStandardMaterial color="#A9A9A9" />
+      </mesh>
+      <mesh position={[2, 1.5, 0]}>
+        <boxGeometry args={[0.3, 3, 0.3]} />
+        <meshStandardMaterial color="#A9A9A9" />
+      </mesh>
+      
+      {/* Крыша */}
+      <mesh position={[0, 3, 0]}>
+        <boxGeometry args={[5, 0.2, 3]} />
+        <meshStandardMaterial color="#FFD700" />
+      </mesh>
+      
+      {/* Дополнительные элементы */}
+      <mesh position={[0, 3.1, 0]}>
+        <boxGeometry args={[4.5, 0.1, 2.5]} />
+        <meshStandardMaterial color="#8B4513" />
+      </mesh>
+    </group>
+  );
+
+  // 3D конструктор
+  const ThreeDConstructor = () => (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">3D Конструктор</h3>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setThreeDView('fence')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              threeDView === 'fence' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Забор
+          </button>
+          <button
+            onClick={() => setThreeDView('canopy')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              threeDView === 'canopy' 
+                ? 'bg-green-600 text-white' 
+                : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            Навес
+          </button>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <div className="bg-gray-100 dark:bg-gray-900 rounded-lg h-96">
+            <Canvas shadows camera={{ position: [5, 3, 5], fov: 50 }}>
+              <ambientLight intensity={0.5} />
+              <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
+              <OrbitControls enableZoom={true} enablePan={true} />
+              
+              {threeDView === 'fence' ? <FenceModel /> : <CanopyModel />}
+              
+              <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]}>
+                <planeGeometry args={[10, 10]} />
+                <meshStandardMaterial color="#e5e7eb" opacity={0.3} transparent />
+              </mesh>
+            </Canvas>
+          </div>
+        </div>
+        
+        <div className="space-y-4">
+          {threeDView === 'fence' ? (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-2">Тип забора</label>
+                <select
+                  value={fenceConfig.type}
+                  onChange={(e) => setFenceConfig({ ...fenceConfig, type: e.target.value })}
+                  className="w-full p-3 border rounded-lg bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                >
+                  {Object.keys(FENCE_PRICES).map(type => (
+                    <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Высота (м)</label>
+                <input
+                  type="range"
+                  min="1"
+                  max="3"
+                  step="0.1"
+                  value={fenceConfig.height}
+                  onChange={(e) => setFenceConfig({ ...fenceConfig, height: parseFloat(e.target.value) })}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>1 м</span>
+                  <span>{fenceConfig.height.toFixed(1)} м</span>
+                  <span>3 м</span>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Длина (м)</label>
+                <input
+                  type="range"
+                  min="5"
+                  max="50"
+                  value={fenceConfig.length}
+                  onChange={(e) => setFenceConfig({ ...fenceConfig, length: parseInt(e.target.value) })}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>5 м</span>
+                  <span>{fenceConfig.length} м</span>
+                  <span>50 м</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="gates"
+                  checked={fenceConfig.gates}
+                  onChange={(e) => setFenceConfig({ ...fenceConfig, gates: e.target.checked })}
+                  className="h-5 w-5 text-blue-600"
+                />
+                <label htmlFor="gates" className="ml-2 text-sm">Ворота</label>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Цвет</label>
+                <input
+                  type="color"
+                  value={fenceConfig.color}
+                  onChange={(e) => setFenceConfig({ ...fenceConfig, color: e.target.value })}
+                  className="w-full h-10"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-2">Тип навеса</label>
+                <select
+                  value={selectedCanopyType}
+                  onChange={(e) => setSelectedCanopyType(e.target.value)}
+                  className="w-full p-3 border rounded-lg bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                >
+                  <option value="автомобиль">Для автомобиля</option>
+                  <option value="терраса">Для террасы</option>
+                  <option value="беседка">Для беседки</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Размер</label>
+                <select
+                  value={formData.canopySize}
+                  onChange={(e) => setFormData({ ...formData, canopySize: e.target.value })}
+                  className="w-full p-3 border rounded-lg bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                >
+                  <option value="">Выберите размер</option>
+                  <option value="до 10 м²">До 10 м²</option>
+                  <option value="10-20 м²">10-20 м²</option>
+                  <option value="свыше 20 м²">Свыше 20 м²</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Материал</label>
+                <select className="w-full p-3 border rounded-lg bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                  <option value="металл">Металл</option>
+                  <option value="дерево">Дерево</option>
+                  <option value="стекло">Стекло</option>
+                </select>
+              </div>
+            </>
+          )}
+          
+          <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300">
+            <Download className="w-4 h-4 inline mr-2" />
+            Скачать 3D-модель
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Карточка услуги
+  const ServiceCard = ({ service, index }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className={`bg-gradient-to-br ${service.color} rounded-xl shadow-lg p-6 cursor-pointer transform transition-all duration-300 hover:shadow-2xl hover:scale-105`}
+      onClick={() => setActiveTab('contact')}
+    >
+      <div className="flex items-center mb-4">
+        <div className="bg-white/30 p-3 rounded-lg text-white">
+          {service.icon}
+        </div>
+        <h3 className="text-xl font-bold text-white ml-4">{service.name}</h3>
+      </div>
+      <p className="text-white/90 mb-4">{service.description}</p>
+      <div className="flex justify-between items-center">
+        <span className="text-lg font-bold text-white">
+          {service.name === "Заборы" && "от 700 ₽/м"}
+          {service.name === "Навесы" && "от 15 000 ₽"}
+          {service.name === "Дополнительные услуги" && "индивидуально"}
+        </span>
+        <ChevronRight className="w-5 h-5 text-white" />
+      </div>
+    </motion.div>
+  );
+
+  // Элемент галереи
+  const GalleryItem = ({ image, index }) => (
+    <motion.div
+      key={index}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: index === currentImageIndex ? 1 : 0, scale: index === currentImageIndex ? 1 : 0.8 }}
+      transition={{ duration: 0.5 }}
+      className="absolute inset-0 transition-opacity duration-500"
+    >
+      <img src={image} alt={`Галерея ${index + 1}`} className="w-full h-full object-cover rounded-xl" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-6">
+        <span className="text-white text-lg font-semibold">Проект #{index + 1}</span>
+      </div>
+    </motion.div>
+  );
+
+  return (
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+      {/* Header */}
+      <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg sticky top-0 z-50`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-lg">
+                <Building className="w-8 h-8 text-white" />
+              </div>
+              <div className="ml-3">
+                <h1 className="text-xl font-bold text-gray-900">{COMPANY_NAME}</h1>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Шумерля</p>
+              </div>
+            </div>
+            
+            <nav className="hidden md:flex space-x-8">
+              {['home', 'services', 'gallery', 'testimonials', 'contact'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`capitalize font-medium transition-colors duration-300 ${
+                    activeTab === tab ? 'text-blue-600 border-b-2 border-blue-600' : isDarkMode ? 'text-gray-300 hover:text-blue-400' : 'text-gray-700 hover:text-blue-600'
+                  }`}
+                >
+                  {tab === 'home' ? 'Главная' : 
+                   tab === 'services' ? 'Услуги' :
+                   tab === 'gallery' ? 'Галерея' :
+                   tab === 'testimonials' ? 'Отзывы' : 'Контакты'}
+                </button>
+              ))}
+            </nav>
+
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className={`p-2 rounded-full ${isDarkMode ? 'bg-yellow-400 text-gray-900' : 'bg-gray-200 text-gray-700'} transition-colors duration-300`}
+              >
+                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+              
+              <button
+                className="p-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-300"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
+                <RefreshCw className="w-5 h-5" />
+              </button>
+              
+              <button
+                className="md:hidden"
+                onClick={() => setShowMenu(!showMenu)}
+              >
+                {showMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile menu */}
+        {showMenu && (
+          <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} md:hidden border-t`}>
+            <div className="px-4 py-2 space-y-2">
+              {['home', 'services', 'gallery', 'testimonials', 'contact'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => {
+                    setActiveTab(tab);
+                    setShowMenu(false);
+                  }}
+                  className={`block w-full text-left py-2 capitalize font-medium ${isDarkMode ? 'text-gray-300 hover:text-blue-400' : 'text-gray-700 hover:text-blue-600'}`}
+                >
+                  {tab === 'home' ? 'Главная' : 
+                   tab === 'services' ? 'Услуги' :
+                   tab === 'gallery' ? 'Галерея' :
+                   tab === 'testimonials' ? 'Отзывы' : 'Контакты'}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* Hero Section */}
+      {activeTab === 'home' && (
+        <section className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white py-20 overflow-hidden">
+          <div className="absolute inset-0 bg-[url('https://placehold.co/1920x1080/2563eb/ffffff?text=Background')] opacity-10"></div>
+          
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+                  Профессиональное
+                  <span className="block text-yellow-300">строительство</span>
+                  в Шумерле
+                </h1>
+                <p className="text-xl mb-8 text-blue-100">
+                  Заборы, навесы и ограждения высокого качества. Быстро, надежно, профессионально!
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                  <button
+                    onClick={() => setActiveTab('services')}
+                    className="bg-white text-blue-600 px-8 py-4 rounded-lg font-bold hover:bg-gray-100 transition-colors duration-300 flex items-center justify-center"
+                  >
+                    <Zap className="mr-2" />
+                    Наши услуги
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('contact')}
+                    className="border-2 border-white text-white px-8 py-4 rounded-lg font-bold hover:bg-white hover:text-blue-600 transition-colors duration-300 flex items-center justify-center"
+                  >
+                    <Phone className="mr-2" />
+                    Позвонить
+                  </button>
+                </div>
+                
+                {/* Stats cards */}
+                <div className="grid grid-cols-3 gap-4 mt-8">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 text-center">
+                    <Users className="w-8 h-8 mx-auto mb-2 text-white" />
+                    <p className="font-bold text-white">1000+</p>
+                    <p className="text-sm text-white/80">Выполненных проектов</p>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 text-center">
+                    <Award className="w-8 h-8 mx-auto mb-2 text-white" />
+                    <p className="font-bold text-white">{YEARS_OF_EXPERIENCE}+</p>
+                    <p className="text-sm text-white/80">Лет опыта</p>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 text-center">
+                    <Shield className="w-8 h-8 mx-auto mb-2 text-white" />
+                    <p className="font-bold text-white">10</p>
+                    <p className="text-sm text-white/80">Лет гарантии</p>
+                  </div>
+                </div>
+              </motion.div>
+              
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="relative"
+              >
+                <ThreeDConstructor />
+              </motion.div>
+            </div>
+          </div>
+          
+          {/* Floating decorative elements */}
+          <motion.div
+            className="absolute top-20 right-10 w-20 h-20 bg-yellow-400 rounded-full opacity-30"
+            animate={{ y: [0, 20, 0], rotate: [0, 360, 0] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          ></motion.div>
+          <motion.div
+            className="absolute bottom-20 left-10 w-16 h-16 bg-green-400 rounded-full opacity-30"
+            animate={{ y: [0, 15, 0], rotate: [0, 360, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          ></motion.div>
+        </section>
+      )}
+
+      {/* Services Section */}
+      {activeTab === 'services' && (
+        <section className={`py-20 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Наши услуги</h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Комплексное решение для вашего участка и дома
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+              {SERVICES.map((service, index) => (
+                <ServiceCard key={service.id} service={service} index={index} />
+              ))}
+            </div>
+
+            {/* Key Benefits */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-16">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
+                <Award className="mr-3 text-yellow-500" />
+                Почему выбирают нас?
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {KEY_BENEFITS.map((benefit, index) => (
+                  <div key={index} className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl">
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
+                      <Star className="text-blue-600 dark:text-blue-300" />
+                    </div>
+                    <h4 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Преимущество #{index + 1}</h4>
+                    <p className="text-gray-600 dark:text-gray-300">{benefit}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Additional Features */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
+                <Sparkles className="mr-3 text-blue-600" />
+                Дополнительные возможности
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {ADDITIONAL_FEATURES.map((feature, index) => (
+                  <div key={index} className="p-6 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-300">
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4 text-blue-600 dark:text-blue-300">
+                      {feature.icon}
+                    </div>
+                    <h4 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">{feature.title}</h4>
+                    <p className="text-gray-600 dark:text-gray-300">{feature.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Gallery Section */}
+      {activeTab === 'gallery' && (
+        <section className={`py-20 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Наши работы</h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Галерея выполненных проектов в Шумерле
+              </p>
+            </motion.div>
+
+            <div className="relative h-96 rounded-2xl overflow-hidden mb-12 shadow-2xl">
+              {GALLERY_IMAGES.map((image, index) => (
+                <GalleryItem key={index} image={image} index={index} />
+              ))}
+              
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                {GALLERY_IMAGES.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-3 h-3 rounded-full transition-colors duration-300 ${
+                      index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {GALLERY_IMAGES.slice(0, 6).map((image, index) => (
+                <motion.div
+                  key={index}
+                  whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}
+                  className="relative overflow-hidden rounded-xl cursor-pointer group"
+                >
+                  <img src={image} alt={`Работа ${index + 1}`} className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end justify-center pb-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-white text-lg font-semibold">Проект #{index + 1}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Testimonials Section */}
+      {activeTab === 'testimonials' && (
+        <section className={`py-20 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Отзывы клиентов</h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Что говорят о нас наши клиенты
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {TESTIMONIALS.map((testimonial, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className={`rounded-xl shadow-lg p-6 ${isDarkMode ? 'bg-gray-700' : 'bg-white'}`}
+                >
+                  <div className="flex items-center mb-4">
+                    <img src={testimonial.avatar} alt={testimonial.name} className="w-12 h-12 rounded-full mr-4" />
+                    <div>
+                      <h3 className="font-bold text-gray-900 dark:text-white">{testimonial.name}</h3>
+                      <div className="flex">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">{testimonial.text}</p>
+                  {testimonial.verified && (
+                    <div className="flex items-center text-green-500 text-sm">
+                      <ShieldCheck className="w-4 h-4 mr-1" />
+                      Подтвержденный заказчик
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Testimonial Generator */}
+            <div className="mt-16 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
+                <MessageSquare className="mr-3 text-blue-600" />
+                Сгенерируйте свой отзыв
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Ваше имя</label>
+                  <input
+                    type="text"
+                    className="w-full p-3 border rounded-lg bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                    placeholder="Иван Иванов"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Тип работы</label>
+                  <select className="w-full p-3 border rounded-lg bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                    <option>Забор из профнастила</option>
+                    <option>Навес для автомобиля</option>
+                    <option>Ремонт забора</option>
+                  </select>
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-2">Ваши впечатления</label>
+                  <textarea
+                    rows={4}
+                    className="w-full p-3 border rounded-lg bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                    placeholder="Опишите свой опыт работы с нами..."
+                  ></textarea>
+                </div>
+                
+                <button className="md:col-span-2 w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300">
+                  Сгенерировать отзыв
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Contact Section */}
+      {activeTab === 'contact' && (
+        <section className={`py-20 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Контакты</h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Свяжитесь с нами для получения консультации и заказа
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div>
+                <div className="space-y-8">
+                  <div className="flex items-start">
+                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-lg text-white mr-4">
+                      <Phone className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Телефон</h3>
+                      <p className="text-gray-600">+7 (8332) 123-456</p>
+                      <p className="text-gray-600">+7 (937) 388-1435</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start">
+                    <div className="bg-gradient-to-br from-green-500 to-green-600 p-3 rounded-lg text-white mr-4">
+                      <Mail className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Email</h3>
+                      <p className="text-gray-600">info@stroybrigada-shumerlya.ru</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start">
+                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-3 rounded-lg text-white mr-4">
+                      <MapPin className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Адрес</h3>
+                      <p className="text-gray-600">г. Шумерля, ул. Промышленная, д. 15</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start">
+                    <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-lg text-white mr-4">
+                      <Clock className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Режим работы</h3>
+                      <p className="text-gray-600">Пн-Пт: 9:00-18:00</p>
+                      <p className="text-gray-600">Сб: 10:00-16:00</p>
+                      <p className="text-gray-600">Вс: выходной</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Наши преимущества</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                      <p className="text-gray-600">Бесплатный выезд на замер</p>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                      <p className="text-gray-600">Гарантия 10 лет на все работы</p>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                      <p className="text-gray-600">Работаем без предоплаты</p>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                      <p className="text-gray-600">Минимальная сумма заказа всего {MIN_ORDER_AMOUNT} ₽</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className={`${isDarkMode ? 'bg-gray-700' : 'bg-white'} rounded-2xl shadow-xl p-8 relative`}>
+                <div className="absolute top-4 right-4 flex space-x-2">
+                  <button
+                    onClick={() => setIsCalculatorOpen(!isCalculatorOpen)}
+                    className={`p-2 rounded-lg ${
+                      isCalculatorOpen ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    <Calculator className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setIsAppointmentOpen(!isAppointmentOpen)}
+                    className={`p-2 rounded-lg ${
+                      isAppointmentOpen ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    <Calendar className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                  <Heart className="mr-3 text-red-500" />
+                  Оставьте заявку
+                </h3>
+                
+                <AnimatePresence>
+                  {isFormSubmitted ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="bg-green-50 border border-green-200 rounded-lg p-6 text-center"
+                    >
+                      <div className="text-green-500 mb-4">
+                        <CheckCircle className="w-16 h-16 mx-auto" />
+                      </div>
+                      <h4 className="text-xl font-bold text-green-700 mb-2">Спасибо за заявку!</h4>
+                      <p className="text-green-600">Мы свяжемся с вами в ближайшее время.</p>
+                    </motion.div>
+                  ) : (
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Имя</label>
+                          <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            className={`w-full p-3 border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                            placeholder="Ваше имя"
+                          />
+                          {formErrors.name && (
+                            <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Телефон</label>
+                          <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleInputChange}
+                            className={`w-full p-3 border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                            placeholder="+7 (___) ___-__-__"
+                          />
+                          {formErrors.phone && (
+                            <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Услуга</label>
+                          <select
+                            name="service"
+                            value={formData.service}
+                            onChange={handleInputChange}
+                            className={`w-full p-3 border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                          >
+                            <option value="">Выберите услугу</option>
+                            <option value="забор">Забор</option>
+                            <option value="навес">Навес</option>
+                            <option value="ремонт">Ремонт</option>
+                            <option value="ландшафт">Ландшафтный дизайн</option>
+                          </select>
+                          {formErrors.service && (
+                            <p className="text-red-500 text-xs mt-1">{formErrors.service}</p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Тип забора</label>
+                          <select
+                            name="fenceType"
+                            value={formData.fenceType}
+                            onChange={handleInputChange}
+                            className={`w-full p-3 border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                          >
+                            <option value="">Выберите тип</option>
+                            {Object.keys(FENCE_PRICES).map(type => (
+                              <option key={type} value={type}>
+                                {type.charAt(0).toUpperCase() + type.slice(1)} 
+                                ({FENCE_PRICES[type]} ₽/м)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Длина забора (м)</label>
+                          <input
+                            type="number"
+                            name="fenceLength"
+                            value={formData.fenceLength}
+                            onChange={handleInputChange}
+                            className={`w-full p-3 border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                            placeholder="Введите длину"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Размер навеса</label>
+                          <select
+                            name="canopySize"
+                            value={formData.canopySize}
+                            onChange={handleInputChange}
+                            className={`w-full p-3 border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                          >
+                            <option value="">Выберите размер</option>
+                            <option value="до 10 м²">До 10 м² (15 000 ₽)</option>
+                            <option value="10-20 м²">10-20 м² (50 000 ₽)</option>
+                            <option value="свыше 20 м²">Свыше 20 м² (150 000 ₽)</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Сообщение</label>
+                        <textarea
+                          name="message"
+                          value={formData.message}
+                          onChange={handleInputChange}
+                          rows={4}
+                          className={`w-full p-3 border ${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                          placeholder="Расскажите о вашем проекте..."
+                        ></textarea>
+                        {formErrors.message && (
+                          <p className="text-red-500 text-xs mt-1">{formErrors.message}</p>
+                        )}
+                      </div>
+                      
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-lg font-bold text-blue-600">Итого:</span>
+                          <span className="text-2xl font-bold text-blue-600">
+                            {calculatePrice() > 0 ? `${calculatePrice().toLocaleString()} ₽` : '—'}
+                          </span>
+                        </div>
+                        {calculatePrice() > 0 && (
+                          <p className="text-sm text-gray-600 mt-1">Минимальная сумма заказа: {MIN_ORDER_AMOUNT} ₽</p>
+                        )}
+                      </div>
+                      
+                      <button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center"
+                      >
+                        <Send className="mr-2" />
+                        Отправить заявку
+                      </button>
+                    </form>
+                  )}
+                </AnimatePresence>
+                
+                <div className="mt-8 text-center">
+                  <p className="text-sm text-gray-500 mb-2">Или напишите нам в мессенджерах:</p>
+                  <div className="flex justify-center space-x-4">
+                    <a
+                      href="https://wa.me/79373881435"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors duration-300"
+                    >
+                      <span>WhatsApp</span>
+                      <span className="ml-2">💬</span>
+                    </a>
+                    <a
+                      href="https://t.me/stroybrigada_shumerlya"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors duration-300"
+                    >
+                      <span>Telegram</span>
+                      <span className="ml-2">✈️</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Chat Widget */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative"
+        >
+          <button
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            className="bg-blue-600 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-xl hover:bg-blue-700 transition-colors duration-300"
+          >
+            <MessageCircle className="w-8 h-8" />
+            {!isChatOpen && (
+              <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 rounded-full"></span>
+            )}
+          </button>
+          
+          {isChatOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute bottom-20 right-0 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-4 bg-blue-600 text-white font-bold">
+                Онлайн-чат
+              </div>
+              
+              <div className="h-80 overflow-y-auto p-4 space-y-4">
+                {chatMessages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-3/4 p-3 rounded-lg ${
+                        message.sender === 'user'
+                          ? 'bg-blue-100 dark:bg-blue-900/30 rounded-br-none'
+                          : 'bg-gray-100 dark:bg-gray-700 rounded-bl-none'
+                      }`}
+                    >
+                      {message.text}
+                    </div>
+                  </div>
+                ))}
+                
+                {isChatTyping && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg rounded-bl-none">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex">
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Введите сообщение..."
+                    className="flex-1 p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    className="bg-blue-600 text-white p-2 rounded-r-lg hover:bg-blue-700 transition-colors duration-300"
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Footer */}
+      <footer className={`${isDarkMode ? 'bg-gray-900' : 'bg-gray-900'} text-white py-12`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center mb-4">
+                <div className="bg-blue-600 p-2 rounded-lg">
+                  <Building className="w-6 h-6 text-white" />
+                </div>
+                <span className="ml-3 text-xl font-bold">СтройБригада</span>
+              </div>
+              <p className="text-gray-400">
+                Профессиональное строительство заборов, навесов и ограждений в Шумерле
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Услуги</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li>Заборы</li>
+                <li>Навесы</li>
+                <li>Ограждения</li>
+                <li>Установка ворот</li>
+                <li>Ремонт заборов</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Контакты</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li>+7 (8332) 123-456</li>
+                <li>+7 (937) 388-1435</li>
+                <li>info@stroybrigada-shumerlya.ru</li>
+                <li>г. Шумерля, ул. Промышленная</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Связаться</h4>
+              <div className="flex space-x-4">
+                <a href="https://wa.me/79373881435" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-300">
+                  <span className="text-green-500">WhatsApp</span>
+                </a>
+                <a href="https://t.me/stroybrigada_shumerlya" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-300">
+                  <span className="text-blue-500">Telegram</span>
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 СтройБригада. Все права защищены.</p>
+          </div>
+        </div>
+      </footer>
+
+      {/* Back to top button */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className={`fixed bottom-6 left-6 z-50 bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-xl hover:bg-blue-700 transition-colors duration-300 ${
+          isDarkMode ? 'opacity-70 hover:opacity-100' : 'opacity-50 hover:opacity-100'
+        }`}
+      >
+        <ArrowUp className="w-6 h-6" />
+      </button>
+    </div>
+  );
+};
+
+export default App;
