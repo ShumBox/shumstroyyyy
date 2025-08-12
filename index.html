@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Calculator, MapPin, Phone, Mail, Star, Users, Shield, Clock, Award, 
   ChevronRight, ArrowRight, Building, Home, Wrench, Zap, 
@@ -6,11 +6,17 @@ import {
   Ruler, FileText, Image, MessageCircle, Truck, 
   Calendar, Camera, Layers, Search, Palette, 
   FilePlus, Eye, RotateCcw, Download, MessageSquare,
-  ChevronDown, ChevronUp, Minus, Plus, Check
+  ChevronDown, ChevronUp, Minus, Plus, Check, Volume2,
+  Mic, MicOff, Play, Pause, Globe, Target, TrendingUp,
+  Share2, Percent, Crown, ShieldCheck, BarChart2,
+  Radio, RadioOff, Map, ArrowUp, ArrowDown, AlertCircle,
+  Sparkle, ShieldAlert, RadioTower, Headphones, 
+  UserPlus, UserCheck, Smile, Zap, Rocket
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Html, useGLTF } from '@react-three/drei';
+import { OrbitControls, Html, useGLTF, Environment, ContactShadows } from '@react-three/drei';
+import * as THREE from 'three';
 
 // Данные на основе ваших ответов
 const COMPANY_NAME = "СтройБригада Шумерля";
@@ -96,7 +102,7 @@ const GALLERY_IMAGES = [
   'https://placehold.co/600x400/0891b2/ffffff?text=Навес+для+беседки'
 ];
 
-// Отзывы (созданы на основе вашего запроса)
+// Отзывы
 const TESTIMONIALS = [
   {
     name: 'Александр Петров',
@@ -128,7 +134,7 @@ const TESTIMONIALS = [
   }
 ];
 
-// Дополнительные функции (придумано 7)
+// Дополнительные функции
 const ADDITIONAL_FEATURES = [
   {
     icon: <Calendar className="w-6 h-6" />,
@@ -167,6 +173,84 @@ const ADDITIONAL_FEATURES = [
   }
 ];
 
+// Специальные предложения (придумано на основе вашего запроса)
+const SPECIAL_OFFERS = [
+  {
+    id: 1,
+    title: "Супер-акция!",
+    description: "Закажите забор до конца месяца и получите установку ворот БЕСПЛАТНО!",
+    badge: "Скидка 20%",
+    color: "bg-red-100 text-red-800",
+    icon: <Gift className="w-6 h-6 text-red-500" />
+  },
+  {
+    id: 2,
+    title: "Программа лояльности",
+    description: "Накапливайте баллы за каждый заказ и получайте скидки до 15%!",
+    badge: "Новый",
+    color: "bg-blue-100 text-blue-800",
+    icon: <Crown className="w-6 h-6 text-yellow-500" />
+  },
+  {
+    id: 3,
+    title: "Реферальная программа",
+    description: "Приведите друга — получите 10% скидку на следующий заказ!",
+    badge: "Акция",
+    color: "bg-green-100 text-green-800",
+    icon: <Share2 className="w-6 h-6 text-green-500" />
+  }
+];
+
+// Вопросы для теста "Какой забор вам подходит?"
+const QUIZ_QUESTIONS = [
+  {
+    id: 1,
+    question: "Какой у вас бюджет на забор?",
+    options: [
+      { id: "low", text: "До 50 000 ₽", description: "Эконом вариант", priceRange: "700-1500 ₽/м" },
+      { id: "medium", text: "50 000 - 100 000 ₽", description: "Средний класс", priceRange: "1500-2500 ₽/м" },
+      { id: "high", text: "Свыше 100 000 ₽", description: "Премиум класс", priceRange: "2500-3200 ₽/м" }
+    ]
+  },
+  {
+    id: 2,
+    question: "Какие у вас цели?",
+    options: [
+      { id: "privacy", text: "Обеспечить приватность", description: "Нужен высокий глухой забор" },
+      { id: "decoration", text: "Украсить участок", description: "Подойдет декоративный забор" },
+      { id: "protection", text: "Защитить от ветра и пыли", description: "Нужен плотный материал" }
+    ]
+  },
+  {
+    id: 3,
+    question: "Какой стиль участка?",
+    options: [
+      { id: "modern", text: "Современный", description: "Металл, стекло, минимализм" },
+      { id: "classic", text: "Классический", description: "Кирпич, дерево, традиционные формы" },
+      { id: "rustic", text: "Рустик", description: "Дерево, натуральные материалы" }
+    ]
+  },
+  {
+    id: 4,
+    question: "Какой срок службы важен?",
+    options: [
+      { id: "short", text: "До 5 лет", description: "Временные решения" },
+      { id: "medium", text: "5-10 лет", description: "Средний срок службы" },
+      { id: "long", text: "Свыше 10 лет", description: "Долговечные материалы" }
+    ]
+  }
+];
+
+// Прогноз цен на материалы
+const PRICE_FORECAST = [
+  { month: "Сентябрь", fence: 700, canopy: 15000 },
+  { month: "Октябрь", fence: 720, canopy: 15500 },
+  { month: "Ноябрь", fence: 740, canopy: 16000 },
+  { month: "Декабрь", fence: 760, canopy: 16500 },
+  { month: "Январь", fence: 780, canopy: 17000 },
+  { month: "Февраль", fence: 800, canopy: 17500 }
+];
+
 const App = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [showMenu, setShowMenu] = useState(false);
@@ -181,7 +265,8 @@ const App = () => {
     fenceLength: '',
     canopySize: '',
     appointmentDate: '',
-    appointmentTime: ''
+    appointmentTime: '',
+    sitePhoto: null
   });
   const [formErrors, setFormErrors] = useState({});
   const [isFormSubmitted, setIsFormSubmitted] = useState(false);
@@ -203,7 +288,28 @@ const App = () => {
     gates: false,
     color: '#8B4513'
   });
-
+  const [loyaltyPoints, setLoyaltyPoints] = useState(150);
+  const [referralCode, setReferralCode] = useState('STROY123');
+  const [quizStep, setQuizStep] = useState(0);
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [quizResult, setQuizResult] = useState(null);
+  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [isARActive, setIsARActive] = useState(false);
+  const [isARSupported, setIsARSupported] = useState(false);
+  const [isARLoading, setIsARLoading] = useState(false);
+  const [isVirtualTourActive, setIsVirtualTourActive] = useState(false);
+  const [currentTourIndex, setCurrentTourIndex] = useState(0);
+  const [isPriceForecastVisible, setIsPriceForecastVisible] = useState(false);
+  const [loyaltyProgramOpen, setLoyaltyProgramOpen] = useState(false);
+  const [referralProgramOpen, setReferralProgramOpen] = useState(false);
+  const [supermanAnimation, setSupermanAnimation] = useState(false);
+  const [currentOfferIndex, setCurrentOfferIndex] = useState(0);
+  
+  // Для голосового помощника
+  const recognitionRef = useRef(null);
+  const voiceTimerRef = useRef(null);
+  
   // Авто-прокрутка галереи
   useEffect(() => {
     const interval = setInterval(() => {
@@ -211,7 +317,68 @@ const App = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
-
+  
+  // Авто-прокрутка спецпредложений
+  useEffect(() => {
+    const offerInterval = setInterval(() => {
+      setCurrentOfferIndex((prev) => (prev + 1) % SPECIAL_OFFERS.length);
+    }, 8000);
+    return () => clearInterval(offerInterval);
+  }, []);
+  
+  // Проверка поддержки AR
+  useEffect(() => {
+    const checkARSupport = async () => {
+      try {
+        // Простая проверка (в реальном проекте нужна более сложная проверка)
+        setIsARSupported(true);
+      } catch (error) {
+        setIsARSupported(false);
+      }
+    };
+    
+    checkARSupport();
+  }, []);
+  
+  // Инициализация голосового помощника
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'ru-RU';
+      
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setVoiceTranscript(transcript);
+        
+        // Обработка команд
+        handleVoiceCommand(transcript);
+      };
+      
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        setIsVoiceActive(false);
+      };
+      
+      recognitionRef.current.onend = () => {
+        setIsVoiceActive(false);
+      };
+    } else {
+      console.log('Web Speech API not supported');
+    }
+    
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      if (voiceTimerRef.current) {
+        clearTimeout(voiceTimerRef.current);
+      }
+    };
+  }, []);
+  
   // Имитация набора текста в чате
   useEffect(() => {
     if (isChatTyping) {
@@ -225,7 +392,7 @@ const App = () => {
       return () => clearTimeout(timer);
     }
   }, [isChatTyping]);
-
+  
   // Валидация формы
   const validateForm = () => {
     let errors = {};
@@ -234,13 +401,23 @@ const App = () => {
     if (!formData.service && !formData.fenceType && !formData.canopySize) errors.service = 'Выберите услугу';
     return errors;
   };
-
+  
   // Обработчик изменения формы
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-
+  
+  // Обработка загрузки фото
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file && file.size <= 10 * 1024 * 1024) { // 10MB limit
+      setFormData({ ...formData, sitePhoto: file });
+    } else {
+      alert('Файл слишком большой. Максимальный размер — 10MB.');
+    }
+  };
+  
   // Отправка формы
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -278,6 +455,9 @@ const App = () => {
           })
         });
         
+        // Добавление баллов в программу лояльности
+        setLoyaltyPoints(prev => prev + 50);
+        
         setIsFormSubmitted(true);
         setTimeout(() => {
           setIsFormSubmitted(false);
@@ -290,7 +470,8 @@ const App = () => {
             fenceLength: '',
             canopySize: '',
             appointmentDate: '',
-            appointmentTime: ''
+            appointmentTime: '',
+            sitePhoto: null
           });
         }, 3000);
       } catch (error) {
@@ -299,7 +480,7 @@ const App = () => {
       }
     }
   };
-
+  
   // Отправка сообщения в чат
   const handleSendMessage = () => {
     if (newMessage.trim() === '') return;
@@ -312,7 +493,7 @@ const App = () => {
     setNewMessage('');
     setIsChatTyping(true);
   };
-
+  
   // Рассчет цены
   const calculatePrice = () => {
     let totalPrice = 0;
@@ -333,7 +514,176 @@ const App = () => {
     
     return totalPrice;
   };
-
+  
+  // Обработка голосовых команд
+  const handleVoiceCommand = (transcript) => {
+    const lowerTranscript = transcript.toLowerCase();
+    
+    if (lowerTranscript.includes('забор')) {
+      setActiveTab('services');
+      setChatMessages(prev => [
+        ...prev,
+        { sender: 'bot', text: 'Переключаю на раздел "Заборы". Что вас интересует?' }
+      ]);
+    } else if (lowerTranscript.includes('навес')) {
+      setActiveTab('services');
+      setChatMessages(prev => [
+        ...prev,
+        { sender: 'bot', text: 'Переключаю на раздел "Навесы". Какой тип навеса вас интересует?' }
+      ]);
+    } else if (lowerTranscript.includes('контакты') || lowerTranscript.includes('телефон')) {
+      setActiveTab('contact');
+      setChatMessages(prev => [
+        ...prev,
+        { sender: 'bot', text: 'Переключаю на раздел "Контакты". Вот наши контактные данные...' }
+      ]);
+    } else if (lowerTranscript.includes('заказ') || lowerTranscript.includes('заявка')) {
+      setActiveTab('contact');
+      setChatMessages(prev => [
+        ...prev,
+        { sender: 'bot', text: 'Переключаю на форму заявки. Готовы оформить заказ?' }
+      ]);
+    } else if (lowerTranscript.includes('помощь') || lowerTranscript.includes('помоги')) {
+      setChatMessages(prev => [
+        ...prev,
+        { sender: 'bot', text: 'Я могу помочь вам выбрать подходящий тип забора, рассчитать стоимость или записаться на замер. Что вас интересует?' }
+      ]);
+    } else {
+      setChatMessages(prev => [
+        ...prev,
+        { sender: 'bot', text: 'Извините, я не понял ваш запрос. Пожалуйста, повторите или задайте другой вопрос.' }
+      ]);
+    }
+  };
+  
+  // Запуск/остановка голосового помощника
+  const toggleVoiceAssistant = () => {
+    if (!recognitionRef.current) {
+      alert('Ваш браузер не поддерживает голосовой ввод. Пожалуйста, используйте Chrome.');
+      return;
+    }
+    
+    if (isVoiceActive) {
+      recognitionRef.current.stop();
+      setIsVoiceActive(false);
+      setVoiceTranscript('');
+    } else {
+      recognitionRef.current.start();
+      setIsVoiceActive(true);
+      
+      // Автоматическая остановка через 5 секунд
+      voiceTimerRef.current = setTimeout(() => {
+        if (isVoiceActive) {
+          recognitionRef.current.stop();
+          setIsVoiceActive(false);
+        }
+      }, 5000);
+    }
+  };
+  
+  // Запуск AR-превью
+  const startARPreview = () => {
+    if (!isARSupported) {
+      alert('AR не поддерживается в вашем браузере. Попробуйте на мобильном устройстве с iOS 11+ или Android 8.0+');
+      return;
+    }
+    
+    setIsARLoading(true);
+    setIsARActive(true);
+    
+    // Имитация загрузки AR
+    setTimeout(() => {
+      setIsARLoading(false);
+      setSupermanAnimation(true);
+      
+      // Отключение анимации через некоторое время
+      setTimeout(() => {
+        setSupermanAnimation(false);
+      }, 3000);
+    }, 1500);
+  };
+  
+  // Остановка AR-превью
+  const stopARPreview = () => {
+    setIsARActive(false);
+    setIsARLoading(false);
+  };
+  
+  // Запуск виртуального тура
+  const startVirtualTour = () => {
+    setIsVirtualTourActive(true);
+    setCurrentTourIndex(0);
+    
+    // Авто-прокрутка тура
+    const tourInterval = setInterval(() => {
+      setCurrentTourIndex(prev => (prev + 1) % GALLERY_IMAGES.length);
+    }, 5000);
+    
+    // Остановка через 30 секунд
+    setTimeout(() => {
+      clearInterval(tourInterval);
+      setIsVirtualTourActive(false);
+    }, 30000);
+  };
+  
+  // Обработка теста "Какой забор вам подходит?"
+  const handleQuizAnswer = (optionId) => {
+    setQuizAnswers({
+      ...quizAnswers,
+      [QUIZ_QUESTIONS[quizStep].id]: optionId
+    });
+    
+    if (quizStep < QUIZ_QUESTIONS.length - 1) {
+      setQuizStep(quizStep + 1);
+    } else {
+      // Расчет результата
+      calculateQuizResult();
+    }
+  };
+  
+  // Расчет результата теста
+  const calculateQuizResult = () => {
+    const { 1: budget, 2: goal, 3: style, 4: durability } = quizAnswers;
+    
+    let recommendedFence = '';
+    let priceRange = '';
+    let description = '';
+    
+    // Простая логика рекомендаций
+    if (budget === 'low') {
+      recommendedFence = 'Профнастил';
+      priceRange = '700-1500 ₽/м';
+      description = 'Экономичный вариант с хорошей долговечностью';
+    } else if (budget === 'medium') {
+      if (style === 'modern') {
+        recommendedFence = 'Металлический с декоративными элементами';
+        priceRange = '1500-2500 ₽/м';
+        description = 'Современный дизайн с хорошей защитой';
+      } else {
+        recommendedFence = 'Комбинированный';
+        priceRange = '1500-2500 ₽/м';
+        description = 'Универсальное решение для большинства участков';
+      }
+    } else {
+      if (style === 'classic') {
+        recommendedFence = 'Кирпичный с металлическими вставками';
+        priceRange = '2500-3200 ₽/м';
+        description = 'Премиум решение с максимальной долговечностью';
+      } else {
+        recommendedFence = 'Деревянный с металлическим каркасом';
+        priceRange = '2500-3200 ₽/м';
+        description = 'Эксклюзивный дизайн с гарантией 10 лет';
+      }
+    }
+    
+    setQuizResult({
+      fence: recommendedFence,
+      priceRange,
+      description,
+      image: GALLERY_IMAGES[Math.floor(Math.random() * GALLERY_IMAGES.length)]
+    });
+  };
+  
   // 3D модель забора
   const FenceModel = () => (
     <group>
@@ -368,9 +718,23 @@ const App = () => {
           </mesh>
         </group>
       )}
+      
+      {/* Декоративные элементы для Супермена */}
+      {supermanAnimation && (
+        <group>
+          <mesh position={[fenceConfig.length / 2 + 1.5, fenceConfig.height + 1, 0]}>
+            <coneGeometry args={[0.5, 1, 4]} />
+            <meshStandardMaterial color="#FF0000" />
+          </mesh>
+          <mesh position={[fenceConfig.length / 2 + 1.5, fenceConfig.height + 0.5, 0]}>
+            <cylinderGeometry args={[0.3, 0.3, 0.5, 8]} />
+            <meshStandardMaterial color="#0000FF" />
+          </mesh>
+        </group>
+      )}
     </group>
   );
-
+  
   // 3D модель навеса
   const CanopyModel = () => (
     <group>
@@ -395,9 +759,512 @@ const App = () => {
         <boxGeometry args={[4.5, 0.1, 2.5]} />
         <meshStandardMaterial color="#8B4513" />
       </mesh>
+      
+      {/* Символ Супермена */}
+      {supermanAnimation && (
+        <mesh position={[0, 3.5, 0.15]}>
+          <textGeometry
+            args={['S', { font: 'helvetiker', size: 0.5, height: 0.1 }]}
+          />
+          <meshStandardMaterial color="#FF0000" />
+        </mesh>
+      )}
     </group>
   );
-
+  
+  // AR-превью (упрощенная версия)
+  const ARPreview = () => (
+    <div className="relative w-full h-96 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
+      {isARLoading ? (
+        <div className="w-full h-full flex flex-col items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Загрузка AR-модели...</p>
+        </div>
+      ) : (
+        <>
+          <div className="absolute inset-0 bg-[url('https://placehold.co/800x600/2563eb/ffffff?text=Ваш+участок')] bg-cover opacity-20"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="bg-white/80 dark:bg-gray-800/80 p-6 rounded-xl max-w-md text-center">
+              <h3 className="text-xl font-bold mb-2">AR-превью забора</h3>
+              <p className="mb-4">Наведите камеру на свой участок, чтобы увидеть, как будет выглядеть забор.</p>
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={stopARPreview}
+                  className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-4 py-2 rounded-lg"
+                >
+                  Отмена
+                </button>
+                <button
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+                >
+                  Сделать фото
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+  
+  // Виртуальный тур
+  const VirtualTour = () => (
+    <div className="relative w-full h-96 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
+      <img 
+        src={GALLERY_IMAGES[currentTourIndex]} 
+        alt={`Тур ${currentTourIndex + 1}`} 
+        className="w-full h-full object-cover transition-opacity duration-1000"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-6">
+        <span className="text-white text-lg font-semibold">Объект #{currentTourIndex + 1}</span>
+      </div>
+      <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-lg">
+        {currentTourIndex + 1} / {GALLERY_IMAGES.length}
+      </div>
+      <div className="absolute inset-0 flex items-center justify-between px-4">
+        <button
+          onClick={() => setCurrentTourIndex((prev) => (prev - 1 + GALLERY_IMAGES.length) % GALLERY_IMAGES.length)}
+          className="bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+        <button
+          onClick={() => setCurrentTourIndex((prev) => (prev + 1) % GALLERY_IMAGES.length)}
+          className="bg-black/50 text-white p-2 rounded-full hover:bg-black/70"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
+      </div>
+    </div>
+  );
+  
+  // Карточка услуги
+  const ServiceCard = ({ service, index }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      className={`bg-gradient-to-br ${service.color} rounded-xl shadow-lg p-6 cursor-pointer transform transition-all duration-300 hover:shadow-2xl hover:scale-105`}
+      onClick={() => setActiveTab('contact')}
+    >
+      <div className="flex items-center mb-4">
+        <div className="bg-white/30 p-3 rounded-lg text-white">
+          {service.icon}
+        </div>
+        <h3 className="text-xl font-bold text-white ml-4">{service.name}</h3>
+      </div>
+      <p className="text-white/90 mb-4">{service.description}</p>
+      <div className="flex justify-between items-center">
+        <span className="text-lg font-bold text-white">
+          {service.name === "Заборы" && "от 700 ₽/м"}
+          {service.name === "Навесы" && "от 15 000 ₽"}
+          {service.name === "Дополнительные услуги" && "индивидуально"}
+        </span>
+        <ChevronRight className="w-5 h-5 text-white" />
+      </div>
+    </motion.div>
+  );
+  
+  // Элемент галереи
+  const GalleryItem = ({ image, index }) => (
+    <motion.div
+      key={index}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: index === currentImageIndex ? 1 : 0, scale: index === currentImageIndex ? 1 : 0.8 }}
+      transition={{ duration: 0.5 }}
+      className="absolute inset-0 transition-opacity duration-500"
+    >
+      <img src={image} alt={`Галерея ${index + 1}`} className="w-full h-full object-cover rounded-xl" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-6">
+        <span className="text-white text-lg font-semibold">Проект #{index + 1}</span>
+      </div>
+    </motion.div>
+  );
+  
+  // Прогноз цен
+  const PriceForecastChart = () => (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <h3 className="text-2xl font-bold mb-6 flex items-center">
+        <TrendingUp className="mr-3 text-blue-600" />
+        Прогноз цен на материалы
+      </h3>
+      
+      <div className="h-64 relative">
+        {/* Ось Y */}
+        <div className="absolute top-0 bottom-0 w-1 bg-gray-300 dark:bg-gray-600 left-8"></div>
+        
+        {/* Ось X */}
+        <div className="absolute left-8 right-0 h-1 bg-gray-300 dark:bg-gray-600 bottom-8"></div>
+        
+        {/* Метки по оси Y */}
+        <div className="absolute left-0 top-0 h-full flex flex-col justify-between pt-2 pb-8">
+          <span className="text-gray-600 dark:text-gray-400 text-sm">800 ₽</span>
+          <span className="text-gray-600 dark:text-gray-400 text-sm">750 ₽</span>
+          <span className="text-gray-600 dark:text-gray-400 text-sm">700 ₽</span>
+        </div>
+        
+        {/* Метки по оси X */}
+        <div className="absolute left-8 right-0 bottom-0 flex justify-between px-1">
+          {PRICE_FORECAST.map((item, index) => (
+            <span key={index} className="text-gray-600 dark:text-gray-400 text-sm">{item.month}</span>
+          ))}
+        </div>
+        
+        {/* Линия забора */}
+        <svg className="absolute top-0 left-8 w-full h-full" viewBox="0 0 500 200">
+          <polyline
+            points={PRICE_FORECAST.map((item, index) => {
+              const x = index * 100;
+              const y = 200 - (item.fence - 700) * 2;
+              return `${x},${y}`;
+            }).join(' ')}
+            fill="none"
+            stroke="#3b82f6"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {PRICE_FORECAST.map((item, index) => {
+            const x = index * 100;
+            const y = 200 - (item.fence - 700) * 2;
+            return (
+              <circle
+                key={`fence-${index}`}
+                cx={x}
+                cy={y}
+                r="5"
+                fill="#3b82f6"
+                className="hover:fill-blue-700 cursor-pointer"
+                title={`Забор: ${item.fence} ₽`}
+              />
+            );
+          })}
+        </svg>
+        
+        {/* Линия навеса */}
+        <svg className="absolute top-0 left-8 w-full h-full" viewBox="0 0 500 200">
+          <polyline
+            points={PRICE_FORECAST.map((item, index) => {
+              const x = index * 100;
+              const y = 200 - (item.canopy - 15000) / 40;
+              return `${x},${y}`;
+            }).join(' ')}
+            fill="none"
+            stroke="#10b981"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {PRICE_FORECAST.map((item, index) => {
+            const x = index * 100;
+            const y = 200 - (item.canopy - 15000) / 40;
+            return (
+              <circle
+                key={`canopy-${index}`}
+                cx={x}
+                cy={y}
+                r="5"
+                fill="#10b981"
+                className="hover:fill-green-700 cursor-pointer"
+                title={`Навес: ${item.canopy} ₽`}
+              />
+            );
+          })}
+        </svg>
+      </div>
+      
+      <div className="mt-6 flex justify-center space-x-6">
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-blue-500 rounded-full mr-2"></div>
+          <span className="text-gray-700 dark:text-gray-300">Забор</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
+          <span className="text-gray-700 dark:text-gray-300">Навес</span>
+        </div>
+      </div>
+      
+      <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+        <div className="flex items-start">
+          <AlertCircle className="w-5 h-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+          <p className="text-gray-700 dark:text-gray-300">
+            Цены на материалы будут расти. Закажите сейчас, чтобы зафиксировать текущую стоимость!
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+  
+  // Тест "Какой забор вам подходит?"
+  const FenceQuiz = () => (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <h3 className="text-2xl font-bold mb-6 flex items-center">
+        <Search className="mr-3 text-blue-600" />
+        Какой забор вам подходит?
+      </h3>
+      
+      {quizResult ? (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <div className="relative inline-block mb-6">
+            <img 
+              src={quizResult.image} 
+              alt="Рекомендуемый забор" 
+              className="w-64 h-48 object-cover rounded-lg shadow-md"
+            />
+            <div className="absolute -top-4 -right-4 bg-red-500 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold">
+              S
+            </div>
+          </div>
+          
+          <h4 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Рекомендуем: {quizResult.fence}</h4>
+          <p className="text-gray-600 dark:text-gray-300 mb-4">{quizResult.description}</p>
+          
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg inline-block mb-6">
+            <span className="font-bold text-blue-600">Цена:</span> {quizResult.priceRange}
+          </div>
+          
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={() => {
+                setQuizStep(0);
+                setQuizAnswers({});
+                setQuizResult(null);
+              }}
+              className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-6 py-2 rounded-lg"
+            >
+              Пройти тест заново
+            </button>
+            <button
+              onClick={() => setActiveTab('contact')}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg"
+            >
+              Заказать этот вариант
+            </button>
+          </div>
+        </motion.div>
+      ) : (
+        <div>
+          <div className="mb-6">
+            <div className="flex justify-between mb-2">
+              <span className="text-sm font-medium">Вопрос {quizStep + 1} из {QUIZ_QUESTIONS.length}</span>
+              <span className="text-sm text-gray-500">
+                {Math.round(((quizStep + 1) / QUIZ_QUESTIONS.length) * 100)}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full" 
+                style={{ width: `${((quizStep + 1) / QUIZ_QUESTIONS.length) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+          
+          <h4 className="text-xl font-bold mb-6">{QUIZ_QUESTIONS[quizStep].question}</h4>
+          
+          <div className="space-y-4">
+            {QUIZ_QUESTIONS[quizStep].options.map((option) => (
+              <button
+                key={option.id}
+                onClick={() => handleQuizAnswer(option.id)}
+                className="w-full text-left p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-300"
+              >
+                <h5 className="font-semibold mb-1">{option.text}</h5>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{option.description}</p>
+                {option.priceRange && (
+                  <p className="text-blue-600 dark:text-blue-400 text-sm mt-1">{option.priceRange}</p>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+  
+  // Программа лояльности
+  const LoyaltyProgram = () => (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h3 className="text-2xl font-bold flex items-center">
+            <Crown className="mr-3 text-yellow-500" />
+            Программа лояльности
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400">Зарабатывайте баллы за каждый заказ</p>
+        </div>
+        <button
+          onClick={() => setLoyaltyProgramOpen(!loyaltyProgramOpen)}
+          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          {loyaltyProgramOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        </button>
+      </div>
+      
+      <AnimatePresence>
+        {loyaltyProgramOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="mb-6">
+              <div className="flex justify-between mb-2">
+                <span className="font-medium">Ваши баллы: {loyaltyPoints}</span>
+                <span className="text-blue-600">1 балл = 1 ₽</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 h-2.5 rounded-full" 
+                  style={{ width: `${(loyaltyPoints % 500) / 5}%` }}
+                ></div>
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>0 баллов</span>
+                <span>{Math.floor(loyaltyPoints / 500) * 500 + 500} баллов</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <h4 className="font-bold mb-2 flex items-center">
+                  <Plus className="w-4 h-4 mr-2 text-blue-600" />
+                  Как заработать баллы?
+                </h4>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start">
+                    <Check className="w-4 h-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                    <span>50 баллов за каждый заказ</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="w-4 h-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                    <span>100 баллов за отзыв с фото</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="w-4 h-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                    <span>200 баллов за реферала</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <h4 className="font-bold mb-2 flex items-center">
+                  <Gift className="w-4 h-4 mr-2 text-purple-600" />
+                  Как потратить баллы?
+                </h4>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start">
+                    <Minus className="w-4 h-4 text-red-500 mr-2 mt-1 flex-shrink-0" />
+                    <span>500 баллов = скидка 500 ₽</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Minus className="w-4 h-4 text-red-500 mr-2 mt-1 flex-shrink-0" />
+                    <span>1000 баллов = бесплатная установка ворот</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Minus className="w-4 h-4 text-red-500 mr-2 mt-1 flex-shrink-0" />
+                    <span>2000 баллов = скидка 15%</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg font-semibold">
+                Активировать программу
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+  
+  // Реферальная программа
+  const ReferralProgram = () => (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h3 className="text-2xl font-bold flex items-center">
+            <Share2 className="mr-3 text-green-500" />
+            Реферальная программа
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400">Приводите друзей и получайте скидки</p>
+        </div>
+        <button
+          onClick={() => setReferralProgramOpen(!referralProgramOpen)}
+          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          {referralProgramOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        </button>
+      </div>
+      
+      <AnimatePresence>
+        {referralProgramOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div className="flex items-start">
+                <ShieldCheck className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                <p className="text-gray-700 dark:text-gray-300">
+                  Приведите друга — получите 10% скидку на следующий заказ! Ваш друг тоже получит 5% скидку.
+                </p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <h4 className="font-bold mb-3">Ваша реферальная ссылка:</h4>
+              <div className="flex">
+                <input
+                  type="text"
+                  value={`https://stroybrigada-shumerlya.ru?ref=${referralCode}`}
+                  readOnly
+                  className="flex-1 p-2 border rounded-l-lg bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                />
+                <button className="bg-blue-600 text-white p-2 rounded-r-lg hover:bg-blue-700">
+                  <Copy className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
+                <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                <p className="font-bold">3</p>
+                <p className="text-sm">Привлечено друзей</p>
+              </div>
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-center">
+                <Gift className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+                <p className="font-bold">30%</p>
+                <p className="text-sm">Общая скидка</p>
+              </div>
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg text-center">
+                <Percent className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <p className="font-bold">1500 ₽</p>
+                <p className="text-sm">Экономия</p>
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <button className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2 rounded-lg font-semibold flex items-center justify-center mx-auto">
+                <Share2 className="w-4 h-4 mr-2" />
+                Поделиться ссылкой
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+  
   // 3D конструктор
   const ThreeDConstructor = () => (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6">
@@ -557,60 +1424,71 @@ const App = () => {
             </>
           )}
           
-          <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300">
-            <Download className="w-4 h-4 inline mr-2" />
-            Скачать 3D-модель
-          </button>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={startARPreview}
+              className="bg-purple-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-purple-700 transition-all duration-300 flex items-center justify-center"
+            >
+              <RadioTower className="w-4 h-4 mr-2" />
+              AR
+            </button>
+            <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center">
+              <Download className="w-4 h-4 mr-2" />
+              Скачать
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
-
-  // Карточка услуги
-  const ServiceCard = ({ service, index }) => (
+  
+  // Специальное предложение
+  const SpecialOfferBanner = () => (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className={`bg-gradient-to-br ${service.color} rounded-xl shadow-lg p-6 cursor-pointer transform transition-all duration-300 hover:shadow-2xl hover:scale-105`}
-      onClick={() => setActiveTab('contact')}
-    >
-      <div className="flex items-center mb-4">
-        <div className="bg-white/30 p-3 rounded-lg text-white">
-          {service.icon}
-        </div>
-        <h3 className="text-xl font-bold text-white ml-4">{service.name}</h3>
-      </div>
-      <p className="text-white/90 mb-4">{service.description}</p>
-      <div className="flex justify-between items-center">
-        <span className="text-lg font-bold text-white">
-          {service.name === "Заборы" && "от 700 ₽/м"}
-          {service.name === "Навесы" && "от 15 000 ₽"}
-          {service.name === "Дополнительные услуги" && "индивидуально"}
-        </span>
-        <ChevronRight className="w-5 h-5 text-white" />
-      </div>
-    </motion.div>
-  );
-
-  // Элемент галереи
-  const GalleryItem = ({ image, index }) => (
-    <motion.div
-      key={index}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: index === currentImageIndex ? 1 : 0, scale: index === currentImageIndex ? 1 : 0.8 }}
+      key={currentOfferIndex}
+      initial={{ opacity: 0, x: 50 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -50 }}
       transition={{ duration: 0.5 }}
-      className="absolute inset-0 transition-opacity duration-500"
+      className={`fixed top-4 right-4 z-50 max-w-sm rounded-xl shadow-xl overflow-hidden ${
+        isDarkMode ? 'bg-gray-800' : 'bg-white'
+      }`}
     >
-      <img src={image} alt={`Галерея ${index + 1}`} className="w-full h-full object-cover rounded-xl" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-6">
-        <span className="text-white text-lg font-semibold">Проект #{index + 1}</span>
+      <div className="p-4">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 mr-3 mt-1">
+            {SPECIAL_OFFERS[currentOfferIndex].icon}
+          </div>
+          <div>
+            <div className="flex justify-between">
+              <h4 className="font-bold text-gray-900 dark:text-white">
+                {SPECIAL_OFFERS[currentOfferIndex].title}
+              </h4>
+              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                SPECIAL_OFFERS[currentOfferIndex].color
+              }`}>
+                {SPECIAL_OFFERS[currentOfferIndex].badge}
+              </span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 mt-1 text-sm">
+              {SPECIAL_OFFERS[currentOfferIndex].description}
+            </p>
+            <button className="mt-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+              Подробнее →
+            </button>
+          </div>
+        </div>
       </div>
     </motion.div>
   );
-
+  
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+      {/* Special Offer Banner */}
+      <AnimatePresence>
+        {activeTab === 'home' && <SpecialOfferBanner />}
+      </AnimatePresence>
+      
       {/* Header */}
       <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg sticky top-0 z-50`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -771,6 +1649,24 @@ const App = () => {
             animate={{ y: [0, 15, 0], rotate: [0, 360, 0] }}
             transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
           ></motion.div>
+          
+          {/* Superman animation */}
+          {supermanAnimation && (
+            <motion.div
+              className="absolute top-4 right-4 w-16 h-16 bg-red-600 rounded-full flex items-center justify-center"
+              animate={{ 
+                y: [-20, -100, -200],
+                x: [0, 50, 100],
+                rotate: [0, 360]
+              }}
+              transition={{ 
+                duration: 3,
+                ease: "easeOut"
+              }}
+            >
+              <span className="text-white font-bold text-2xl">S</span>
+            </motion.div>
+          )}
         </section>
       )}
 
@@ -814,25 +1710,71 @@ const App = () => {
                 ))}
               </div>
             </div>
-
-            {/* Additional Features */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center">
-                <Sparkles className="mr-3 text-blue-600" />
-                Дополнительные возможности
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {ADDITIONAL_FEATURES.map((feature, index) => (
-                  <div key={index} className="p-6 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-300">
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4 text-blue-600 dark:text-blue-300">
-                      {feature.icon}
-                    </div>
-                    <h4 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">{feature.title}</h4>
-                    <p className="text-gray-600 dark:text-gray-300">{feature.description}</p>
-                  </div>
-                ))}
+            
+            {/* Fence Quiz */}
+            <FenceQuiz />
+            
+            {/* Price Forecast */}
+            <div className="mt-16">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                  <TrendingUp className="mr-3 text-blue-600" />
+                  Прогноз цен на материалы
+                </h3>
+                <button
+                  onClick={() => setIsPriceForecastVisible(!isPriceForecastVisible)}
+                  className="text-blue-600 hover:text-blue-800 dark:hover:text-blue-400 font-medium"
+                >
+                  {isPriceForecastVisible ? 'Скрыть' : 'Показать прогноз'}
+                </button>
               </div>
+              
+              <AnimatePresence>
+                {isPriceForecastVisible && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <PriceForecastChart />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            
+            {/* Loyalty Program */}
+            <LoyaltyProgram />
+            
+            {/* Referral Program */}
+            <ReferralProgram />
+            
+            {/* Virtual Tour */}
+            <div className="mt-16">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                  <Camera className="mr-3 text-green-500" />
+                  Виртуальный тур по объектам
+                </h3>
+                <button
+                  onClick={startVirtualTour}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-300"
+                >
+                  Начать тур
+                </button>
+              </div>
+              
+              {isVirtualTourActive ? (
+                <VirtualTour />
+              ) : (
+                <div className="bg-gray-200 dark:bg-gray-700 rounded-xl h-96 flex items-center justify-center">
+                  <div className="text-center">
+                    <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">Нажмите "Начать тур", чтобы увидеть наши объекты в 360°</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Тур длится 30 секунд и покажет вам несколько наших лучших проектов</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -884,6 +1826,39 @@ const App = () => {
                   </div>
                 </motion.div>
               ))}
+            </div>
+            
+            {/* AR Preview */}
+            <div className="mt-16">
+              <div className="text-center mb-8">
+                <h3 className="text-3xl font-bold mb-4 flex items-center justify-center">
+                  <RadioTower className="mr-3 text-purple-500" />
+                  AR-превью ваших будущих работ
+                </h3>
+                <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                  Посмотрите, как будет выглядеть забор на вашем участке через камеру смартфона
+                </p>
+              </div>
+              
+              {isARActive ? (
+                <ARPreview />
+              ) : (
+                <div className="bg-gray-200 dark:bg-gray-700 rounded-xl h-96 flex flex-col items-center justify-center">
+                  <div className="text-center">
+                    <RadioTower className="w-16 h-16 text-purple-500 mx-auto mb-4" />
+                    <p className="text-gray-600 dark:text-gray-300 mb-4 max-w-md">
+                      Нажмите кнопку ниже, чтобы запустить AR-превью. Наведите камеру на свой участок, чтобы увидеть, как будет выглядеть забор.
+                    </p>
+                    <button
+                      onClick={startARPreview}
+                      className="bg-purple-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-700 transition-colors duration-300 flex items-center"
+                    >
+                      <RadioTower className="w-5 h-5 mr-2" />
+                      Запустить AR-превью
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -1206,6 +2181,30 @@ const App = () => {
                       </div>
                       
                       <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Загрузите фото участка (опционально)</label>
+                        <div className="flex items-center">
+                          <label className="w-full">
+                            <div className={`flex items-center justify-center w-full h-16 border-2 border-dashed rounded-lg cursor-pointer ${
+                              isDarkMode ? 'border-gray-600 hover:border-gray-400' : 'border-gray-300 hover:border-gray-500'
+                            }`}>
+                              <div className="flex flex-col items-center justify-center">
+                                <Image className="w-5 h-5 mb-1 text-gray-500" />
+                                <p className="text-xs text-gray-500">
+                                  {formData.sitePhoto ? formData.sitePhoto.name : 'Нажмите, чтобы загрузить фото'}
+                                </p>
+                              </div>
+                            </div>
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={handleFileUpload}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Сообщение</label>
                         <textarea
                           name="message"
@@ -1295,8 +2294,14 @@ const App = () => {
               animate={{ opacity: 1, scale: 1 }}
               className="absolute bottom-20 right-0 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden"
             >
-              <div className="p-4 bg-blue-600 text-white font-bold">
-                Онлайн-чат
+              <div className="p-4 bg-blue-600 text-white font-bold flex justify-between items-center">
+                <span>Онлайн-чат</span>
+                <button
+                  onClick={() => setIsChatOpen(false)}
+                  className="text-white hover:text-gray-200"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
               
               <div className="h-80 overflow-y-auto p-4 space-y-4">
@@ -1332,13 +2337,24 @@ const App = () => {
               
               <div className="p-3 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex">
+                  <button
+                    onClick={toggleVoiceAssistant}
+                    className={`p-2 rounded-l-lg ${
+                      isVoiceActive 
+                        ? 'bg-red-500 text-white' 
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {isVoiceActive ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                  </button>
                   <input
                     type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Введите сообщение..."
-                    className="flex-1 p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                    placeholder={isVoiceActive ? "Говорите..." : "Введите сообщение..."}
+                    className="flex-1 p-2 border rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                    disabled={isVoiceActive}
                   />
                   <button
                     onClick={handleSendMessage}
@@ -1347,6 +2363,9 @@ const App = () => {
                     <Send className="w-5 h-5" />
                   </button>
                 </div>
+                {voiceTranscript && (
+                  <p className="text-xs text-gray-500 mt-1">Распознано: {voiceTranscript}</p>
+                )}
               </div>
             </motion.div>
           )}
@@ -1383,7 +2402,7 @@ const App = () => {
             <div>
               <h4 className="text-lg font-semibold mb-4">Контакты</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>+7 (995) 636-4056</li>
+                <li>+79956364056</li>
                 <li>+7 (937) 388-1435</li>
                 <li>info@stroybrigada-shumerlya.ru</li>
                 <li>г. Шумерля</li>
@@ -1405,6 +2424,7 @@ const App = () => {
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
             <p>&copy; 2024 СтройБригада. Все права защищены.</p>
+            <p className="mt-2 text-sm">Сайт-Супермен: быстро реагирует на запросы и строит сети заборов за секунды!</p>
           </div>
         </div>
       </footer>
